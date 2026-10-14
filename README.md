@@ -317,19 +317,6 @@ Weather data by Open-Meteo.com (https://open-meteo.com/)
 
 ## AI use
 
-AI tool used: ChatGPT by OpenAI.
-
-ChatGPT was used to assist with:
-
-- Understanding assignment requirements
-- Developing Node.js and Express API routes
-- Implementing weather data retrieval and formatting
-- Writing query validation functions
-- Implementing in-memory caching
-- Handling API errors and upstream failures
-- Implementing concurrent city comparisons
-- Debugging JavaScript syntax errors
-- Preparing testing commands
-- Writing project documentation
+ AI tools to explain a concept and help to find a bug
 
 The application was run and tested locally using Visual Studio Code, Node.js, and a web browser.
