@@ -3,9 +3,9 @@
 
 CPAN 212 – Assignment 1
 
-A REST API built using Node.js and Express that retrieves current weather conditions and a three-day weather forecast for cities using the Open-Meteo API.
+A REST API built with Node.js and Express that retrieves current weather conditions and a three-day forecast for cities using Open-Meteo.
 
-The application supports city weather searches, comparisons of multiple cities, error handling, input validation, and in-memory caching to reduce unnecessary API requests.
+The application supports weather searches, comparisons between multiple cities, input validation, error handling, and in-memory caching to reduce repeated API requests.
 
 ## Run it
 
@@ -17,64 +17,64 @@ The application supports city weather searches, comparisons of multiple cities, 
 
 ### Installation
 
-1. Clone the GitHub repository.
+1. Clone the repository.
 
 ```bash
 git clone https://github.com/dheshva2020/cpan212-assignment1-prabu-elangovan.git
 cd cpan212-assignment1-prabu-elangovan
 ```
 
-Replace `YOUR-USERNAME` with your actual GitHub username after creating the repository.
-
-2. Install the project dependencies.
+2. Install dependencies.
 
 ```bash
 npm install
 ```
 
-3. Copy `.env.example` to `.env`.
+3. Copy the example environment file.
 
-On Windows PowerShell:
+Windows PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-On Git Bash, macOS, or Linux:
+Git Bash, macOS, or Linux:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Start the server.
-
-```bash
-npm start
-```
-
-For development mode with automatic restarting:
+4. Start the application.
 
 ```bash
 npm run dev
 ```
 
-By default, the application runs at:
+For normal operation:
+
+```bash
+npm start
+```
+
+The server runs at:
 
 http://localhost:4000
 
+The application also supports default configuration values when `.env` is absent.
+
 ## Environment variables
 
-The following environment variables are provided in `.env.example`.
+The application uses the following variables from `.env.example`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `4000` | Port used by the Express API server. |
-| `GEOCODING_URL` | `https://geocoding-api.open-meteo.com/v1` | Base URL for the Open-Meteo geocoding API, used to find city coordinates. |
-| `FORECAST_URL` | `https://api.open-meteo.com/v1` | Base URL for the Open-Meteo forecast API, used to retrieve weather data. |
-| `UPSTREAM_TIMEOUT_MS` | `5000` | Maximum waiting time for upstream API requests, in milliseconds. |
-| `CACHE_TTL_SECONDS` | `600` | Time-to-live for cached weather data, in seconds. |
+| `PORT` | `4000` | Port used by the Express server. |
+| `GEOCODING_URL` | `https://geocoding-api.open-meteo.com/v1` | Base URL for the Open-Meteo geocoding service. |
+| `FORECAST_URL` | `https://api.open-meteo.com/v1` | Base URL for the Open-Meteo forecast service. |
+| `UPSTREAM_TIMEOUT_MS` | `5000` | Maximum time in milliseconds to wait for an upstream request. |
+| `CACHE_TTL_SECONDS` | `600` | Time in seconds before a cached weather result expires. |
 
-Default configuration:
+Example configuration:
 
 ```env
 PORT=4000
@@ -84,17 +84,17 @@ UPSTREAM_TIMEOUT_MS=5000
 CACHE_TTL_SECONDS=600
 ```
 
-The default upstream request timeout is 5 seconds.
+The default upstream timeout is 5 seconds.
 
-The default cache duration is 10 minutes.
+The default cache lifetime is 10 minutes.
 
-The `.env` file should not be committed to GitHub.
+The `.env` file is excluded from GitHub using `.gitignore`.
 
 ## Endpoints
 
-### 1. GET /api/weather
+### GET /api/weather
 
-Retrieves current weather conditions and a three-day forecast for a single city.
+Returns current weather conditions and a three-day forecast for one city.
 
 Example request:
 
@@ -106,28 +106,27 @@ Example URL:
 
 http://localhost:4000/api/weather?city=Toronto
 
-Successful response: `200 OK`
+Expected successful status: `200 OK`
 
-The response includes:
+The response contains a `data` object with:
 
-- City name, country, latitude, longitude, and timezone
-- Current temperature in Celsius
-- Feels-like temperature
-- Relative humidity
-- Wind speed
-- Weather conditions
-- Three-day forecast
-- Fetch timestamp
-- Cache status
-- Open-Meteo attribution
+- `location`: city name, region, country, latitude, longitude, and timezone
+- `current`: temperature, feels-like temperature, humidity, wind speed, weather code, and conditions
+- `daily`: three-day weather forecast
+- `fetchedAt`: timestamp when the weather information was retrieved
+- `cached`: whether the result came from the cache
 
-The `city` query parameter is required and must contain between 2 and 60 characters.
+The response also includes Open-Meteo attribution.
 
-If the requested city does not exist, the API returns `404 Not Found`.
+The `city` parameter must contain between 2 and 60 characters after trimming whitespace.
 
-### 2. GET /api/compare
+Invalid queries return `400 Bad Request`.
 
-Compares the current weather conditions for multiple cities.
+A city that cannot be found returns `404 Not Found`.
+
+### GET /api/compare
+
+Compares weather for 2 to 5 cities.
 
 Example request:
 
@@ -139,27 +138,25 @@ Example URL:
 
 http://localhost:4000/api/compare?cities=Toronto,Vancouver,Halifax
 
-Successful response: `200 OK`
+Expected successful status: `200 OK`
 
-The endpoint accepts between 2 and 5 city names separated by commas.
+The response contains:
 
-The response includes:
-
-- Weather results for each successful city lookup
-- Error information for unsuccessful city lookups
-- Number of successful lookups
-- Number of failed lookups
+- Weather information for successful city lookups
+- Error information for failed city lookups
+- Number of successful requests
+- Number of failed requests
 - Warmest city
 - Coldest city
 - Open-Meteo attribution
 
-The API uses `Promise.allSettled()` to process city lookups concurrently.
+The API uses `Promise.allSettled()` to run city lookups concurrently.
 
-If one city lookup fails, successful results from other cities are still included in the response.
+If one city lookup fails, successful results from other cities are still returned.
 
-Duplicate city names are not allowed, including duplicates with different capitalization.
+Duplicate city names are rejected, including names with different capitalization.
 
-### 3. GET /api/cache/stats
+### GET /api/cache/stats
 
 Returns information about the in-memory weather cache.
 
@@ -173,20 +170,22 @@ Example URL:
 
 http://localhost:4000/api/cache/stats
 
-Successful response: `200 OK`
+Expected successful status: `200 OK`
 
-The response includes:
+The response contains:
 
-- `entries`: Number of active cached entries
-- `hits`: Number of successful cache lookups
-- `misses`: Number of cache misses
-- `ttlSeconds`: Cache expiration time in seconds
+- `entries`: number of active cache entries
+- `hits`: number of successful cache lookups
+- `misses`: number of cache misses
+- `ttlSeconds`: configured cache expiration time
 
-The cache helps reduce repeated requests to Open-Meteo.
+Successful weather results are cached using a trimmed, lowercase city name.
+
+Repeated requests can reuse cached weather information until the cache expires.
 
 ## Testing
 
-The following ten test cases exercise the implemented API. They should be checked against the exact ten requests specified on the assignment page before submission.
+The following ten requests match the testing scenarios specified in the assignment instructions.
 
 On Windows, run these commands in Git Bash.
 
@@ -196,7 +195,7 @@ Start the server first:
 npm run dev
 ```
 
-### Test 1 – Valid city
+### Test 1 — Weather for a city
 
 Expected status: `200 OK`
 
@@ -204,7 +203,27 @@ Expected status: `200 OK`
 curl -i "http://localhost:4000/api/weather?city=Toronto"
 ```
 
-### Test 2 – Missing city parameter
+This retrieves Toronto's current weather and three-day forecast.
+
+### Test 2 — Same city again (cached)
+
+Expected status: `200 OK`
+
+Run this immediately after Test 1, within the cache lifetime.
+
+```bash
+curl -i "http://localhost:4000/api/weather?city=Toronto"
+```
+
+The response should contain:
+
+```json
+"cached": true
+```
+
+The `fetchedAt` value should remain the same as Test 1.
+
+### Test 3 — Weather without a city
 
 Expected status: `400 Bad Request`
 
@@ -212,15 +231,9 @@ Expected status: `400 Bad Request`
 curl -i "http://localhost:4000/api/weather"
 ```
 
-### Test 3 – Empty city parameter
+The response should contain an error with `details.city`.
 
-Expected status: `400 Bad Request`
-
-```bash
-curl -i "http://localhost:4000/api/weather?city="
-```
-
-### Test 4 – City not found
+### Test 4 — Weather for a nonexistent city
 
 Expected status: `404 Not Found`
 
@@ -228,7 +241,9 @@ Expected status: `404 Not Found`
 curl -i "http://localhost:4000/api/weather?city=Qwertyville"
 ```
 
-### Test 5 – Compare three valid cities
+The response should indicate that the city could not be found.
+
+### Test 5 — Compare three cities
 
 Expected status: `200 OK`
 
@@ -236,7 +251,9 @@ Expected status: `200 OK`
 curl -i "http://localhost:4000/api/compare?cities=Toronto,Vancouver,Halifax"
 ```
 
-### Test 6 – Compare cities with one invalid city
+The response should include three city results and a comparison summary.
+
+### Test 6 — Compare with one nonexistent city
 
 Expected status: `200 OK`
 
@@ -244,25 +261,9 @@ Expected status: `200 OK`
 curl -i "http://localhost:4000/api/compare?cities=Toronto,Qwertyville,Halifax"
 ```
 
-The response should contain two successful results and one failed result.
+The response should contain two successful lookups and one failed lookup.
 
-### Test 7 – Duplicate city names
-
-Expected status: `400 Bad Request`
-
-```bash
-curl -i "http://localhost:4000/api/compare?cities=Toronto,toronto"
-```
-
-### Test 8 – Too few cities
-
-Expected status: `400 Bad Request`
-
-```bash
-curl -i "http://localhost:4000/api/compare?cities=Toronto"
-```
-
-### Test 9 – Too many cities
+### Test 7 — Compare too many cities
 
 Expected status: `400 Bad Request`
 
@@ -270,7 +271,19 @@ Expected status: `400 Bad Request`
 curl -i "http://localhost:4000/api/compare?cities=Toronto,Vancouver,Halifax,Ottawa,Montreal,Calgary"
 ```
 
-### Test 10 – Cache statistics
+The API accepts a maximum of five cities.
+
+### Test 8 — Compare duplicate cities
+
+Expected status: `400 Bad Request`
+
+```bash
+curl -i "http://localhost:4000/api/compare?cities=Toronto,toronto"
+```
+
+The API rejects duplicate names regardless of capitalization.
+
+### Test 9 — Cache statistics
 
 Expected status: `200 OK`
 
@@ -278,22 +291,17 @@ Expected status: `200 OK`
 curl -i "http://localhost:4000/api/cache/stats"
 ```
 
-### Additional testing
+The response should contain `entries`, `hits`, `misses`, and `ttlSeconds`.
 
-Request the same city twice:
+### Test 10 — Unknown route
+
+Expected status: `404 Not Found`
 
 ```bash
-curl -i "http://localhost:4000/api/weather?city=Toronto"
-curl -i "http://localhost:4000/api/weather?city=Toronto"
+curl -i "http://localhost:4000/api/unknown"
 ```
 
-The second response should normally contain:
-
-```json
-"cached": true
-```
-
-This confirms that the API is reusing a cached weather result.
+The response should contain an error message for the unknown route.
 
 ## Data source
 
@@ -301,9 +309,9 @@ Weather and geocoding data are provided by Open-Meteo.
 
 Website: https://open-meteo.com/
 
-Open-Meteo provides weather forecast and geocoding services used by this application.
+Open-Meteo provides the city geocoding and weather forecast services used by this application.
 
-Weather data attribution:
+Required attribution:
 
 Weather data by Open-Meteo.com (https://open-meteo.com/)
 
@@ -313,13 +321,13 @@ AI tool used: ChatGPT by OpenAI.
 
 ChatGPT was used to assist with:
 
-- Understanding the assignment requirements
+- Understanding assignment requirements
 - Developing Node.js and Express API routes
-- Implementing weather data retrieval
-- Writing input validation functions
+- Implementing weather data retrieval and formatting
+- Writing query validation functions
 - Implementing in-memory caching
-- Handling API errors
-- Developing concurrent city comparisons
+- Handling API errors and upstream failures
+- Implementing concurrent city comparisons
 - Debugging JavaScript syntax errors
 - Preparing testing commands
 - Writing project documentation
