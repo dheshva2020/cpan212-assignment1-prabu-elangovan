@@ -20,7 +20,7 @@ The application supports city weather searches, comparisons of multiple cities, 
 1. Clone the GitHub repository.
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/cpan212-assignment1-prabu-elangovan.git
+git clone https://github.com/dheshva2020/cpan212-assignment1-prabu-elangovan.git
 cd cpan212-assignment1-prabu-elangovan
 ```
 
